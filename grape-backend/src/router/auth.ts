@@ -35,15 +35,6 @@ auth.post('/register', async (c) => {
 
     const hashedPassword = await hashPassword(body.password);
 
-    const result = await db.batch([
-      db.insert(users).values({
-        username: body.username,
-        phone: body.phone,
-        password: hashedPassword,
-      }).returning({ id: users.id }),
-      
-    ]);
-
     const newUser = await db.insert(users).values({
       username: body.username,
       phone: body.phone,
