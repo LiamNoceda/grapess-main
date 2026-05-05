@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grape</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="login-container">
+        <h1 id="brand">Grape</h1>
+        
+        <div class="lang-switch">
+            <button onclick="setLang('en')">EN</button>
+            <button onclick="setLang('es')">ES</button>
+        </div>
+
+        <form id="authForm">
+            <input type="text" name="username" id="input-user" placeholder="Username" required />
+            <input type="tel" name="phone" id="input-phone" placeholder="Phone Number" required />
+            <input type="text" name="fullName" id="input-name" placeholder="Full Name" required />
+            <input type="password" name="password" id="input-pass" placeholder="Password" required />
+            
+            <button type="submit" id="btn-submit">Sign Up</button>
+        </form>
+
+        <p id="status-msg" data-status="idle"></p>
+    </div>
+
+    <script defer>
+        const texts = {
+            en: { 
+                user: "Username (@nickname)", 
+                phone: "Phone Number (+1...)",
+                name: "Full Name",
+                pass: "Password", 
+                btn: "Sign Up",
+                loading: "Processing..."
+            },
+            es: { 
+                user: "Usuario (@nickname)", 
+                phone: "Número de teléfono (+1...)",
+                name: "Nombre completo",
+                pass: "Contraseña", 
+                btn: "Registrarse",
+                loading: "Procesando..."
+            }
+        };
+
+        function setLang(lang) {
+            localStorage.setItem('grape_lang', lang);
+            window.currentLang = lang;
+            document.documentElement.lang = lang;
+
+            document.getElementById('input-user').placeholder = texts[lang].user;
+            document.getElementById('input-phone').placeholder = texts[lang].phone;
+            document.getElementById('input-name').placeholder = texts[lang].name;
+            document.getElementById('input-pass').placeholder = texts[lang].pass;
+            document.getElementById('btn-submit').innerText = texts[lang].btn;
+        }
+
+        setLang(localStorage.getItem('grape_lang') || 'en');
+
+        document.getElementById('authForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            const status = document.getElementById('status-msg');
+            
+            btn.disabled = true;
+            status.dataset.status = "loading";
+            
+            const data = Object.fromEntries(new FormData(e.target));
+            
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...data, lang: window.currentLang })
+                });
+                
+                const result = await res.json().catch(() => ({ error: "Server Error" }));
+                
+                status.innerText = res.ok ? (result.message || "OK") : (result.error || "Error");
+                status.dataset.status = res.ok ? "success" : "error";
+
+                if (res.ok) e.target.reset();
+
+            } catch (err) {
+                status.dataset.status = "error";
+                status.innerText = "Network Issue";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = texts[window.currentLang].btn;
+            }
+        };
+
+    </script>
+</body>
+</html>
